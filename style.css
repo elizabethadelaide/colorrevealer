@@ -1,0 +1,31 @@
+video, canvas {
+top:0;
+left:0;
+ position: absolute;
+ z-index:2;
+}
+#video{
+  opacity:0.2;
+}
+body{
+  margin:auto;
+}
+#message{
+  font-family:Arial;
+  text-shadow: 10px 10px 5px #FF0ADE;
+  color:#76007D;
+  text-align:center;
+  position: absolute;
+  width: 400px;
+  height: 50px;
+  top: 50%;
+  left: 50%;
+  margin-left: -200px; /* margin is -0.5 * dimension */
+  margin-top: -25px;
+  font-size:3em;
+}
+/*dat gui*/
+#gui{
+  position:absolute;
+  z-index:3;
+}
