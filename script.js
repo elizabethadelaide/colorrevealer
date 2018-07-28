@@ -39,10 +39,10 @@ window.onload = function(){
 function Animator(ctx, trackerTask){
     this.myTracked = []; //keep track of elements being tracked, right now just
     this.movingAverageValue = 0.8; //controls smoothness, 0.8 is good default value
-    //these defaults leave a nice path of circles:
-    this.brushText = "lighten"; //controls text brush
-    this.brushOb = "xor"; //controls trackers brush
-    this.brushBg = "destination-over"; //controls background brush
+    //these defaults leave a nice soft text reveal
+    this.brushText = "luminosity"; //controls text brush
+    this.brushOb = "source-atop"; //controls trackers brush
+    this.brushBg = "source-in"; //controls background brush
     this.displayText = "Some Text";
     //functions:
     this.addTracked = function(id, rect){
