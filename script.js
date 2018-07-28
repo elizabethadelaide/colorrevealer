@@ -1,9 +1,9 @@
 //resize the video and the canvas to fullscreen
 function resizeVideo(v, c){
-  v.width = window.innerWidth;
+  v.width = window.innerWidth; //innerwidth is slightly oversized, workaround is in css (overflow-hidden)
   v.height = window.innerHeight;
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
+  c.width = v.width;
+  c.height = v.height;
 }
 
 //make it reponsize
@@ -21,109 +21,117 @@ window.onload = function(){
   resizeVideo(video, canvas);
   var ctx = canvas.getContext('2d'); //use the canvas to draw 2D shapes
   var tracker = new tracking.ColorTracker(); //init color tracker
-  tracking.track('#video', tracker, { camera: true }); //track video
+  var trackerTask = tracking.track('#video', tracker, { camera: true }); //track video
+  var animator = new Animator(ctx, trackerTask); //initialize canvas animator
 
   /************do trackers here*****************/
   tracker.on('track', function(event) {
-
-          //clear the canvas
-	        //ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = "#F7B6FF"
-          ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
-
-          this.mydraw(event);
-
-	      });
-
-  /**********Manage tracked objects**********************/
-  tracker.myTracked = []; //keep track of elements being tracked
-  tracker.myMaxSize = 5;
-  tracker.movingAverageValue = .8; //0.8 is a smooth option
-  tracker.brushOne = "xor";
-  tracker.brushTwo = "destination-over";
-  tracker.addTracked = function(id, rect){
-    //full function goals
-    //check if id matches exists
-    //console.log("Adding tracker");
-    let obj = this.myTracked.find(o => o.trackid === id);
-    if (obj === undefined){
-          //if (this.myTracked.length < this.myMaxSize){ //keep things simple with less tracked objects
-            rect.width = 1.0; //start small
-            rect.height = 1.0;
-            obj = {key: this.myTracked.length, trackid: id, rect: rect};
-            //console.log(obj);
-            this.myTracked.push(obj); //add to tracked array
-          //}
-    }
-    else{
-      //simple moving average function, can be replaced by more complicated filters
-      //the goal is to create a smooth transition instead of the regular jerkiness of object tracking
-      var a = tracker.movingAverageValue;
-      var b = 1 - tracker.movingAverageValue;
-      rect.x = a*rect.x + b*(obj.rect.x);
-      rect.y = a*rect.y + b*(obj.rect.y);
-      rect.width = a*rect.width + b*(obj.rect.width);
-      rect.height = a*rect.height + b*(obj.rect.height);
-      obj = {key: this.myTracked.length, trackid: id, rect: rect};
-    }
-    //check if color matches
-    //check if x and y are close *enough*
-    return obj;
-  }
-
-  /************Canvas drawing*******************/
-  tracker.myAnimate = function(rect){
-    //get color of rectangle to match color of tracked object:
-    if (rect.color === 'custom') {
-      rect.color = tracker.customColor;
-    }
-    ctx.strokeStyle = rect.color;
-    ctx.fillStyle = rect.color;
-
-    //make it pretty :)
-    ctx.shadowBlur = 50;
-    ctx.shadowColor = "#fff"; //make a pretty blur around the window border
-    ctx.lineWidth = 5;
-
-    //get center:
-
-    //get radius
-    var r = (rect.width + rect.height) / 4;
-    var x = (rect.x + r);
-    var y = (rect.y + r);
-    //x = canvas.width-x; //it's left/right inverted
-
-    //draw a circle to make a window (360 degree arc)
-    ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
-    ctx.beginPath()
-    ctx.arc(x, y, r, 0, 2*Math.PI); //create an outline
-    ctx.stroke();
-    ctx.fill();
-    ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
-  }
-  /***********drawing function******************/
-  tracker.mydraw = function(event){
-    //tracking doesn't really track id,
-    //BUT it does seem to be consistent enough in the order of tracked objects for now
-    var i = 0;
-    event.data.forEach(function(rect){
-      //console.log(rect);
-      var obj = tracker.addTracked(i, rect); //add tracking object or gets smoothed object
-      if (obj !== undefined){
-        //console.log("Animating");
-        tracker.myAnimate(obj.rect); //handle canvas drawing
-      }
-      i++;
-    });
-  }
+      animator.draw(event, tracker.customColor);
+	});
 
   /***********initialize GUI********************/
-  initGUIControllers(tracker);
+  initGUIControllers(tracker, animator);
+}
+
+//object to handle canvas drawing
+//main usage:
+//tracker.on('track', function(event){animator.mydraw(event)}
+function Animator(ctx, trackerTask){
+    this.myTracked = []; //keep track of elements being tracked, right now just 
+    this.movingAverageValue = 0.8; //controls smoothness, 0.8 is good default value
+    //these defaults leave a nice path of circles:
+    this.brushOne = "xor"; //controls placing brush
+    this.brushTwo = "destination-over"; //controls leaving brush
+    //functions:
+    this.addTracked = function(id, rect){
+        //full function goals
+        //check if id matches exists
+        let obj = this.myTracked.find(o => o.trackid === id);
+        if (obj === undefined){
+              //if (this.myTracked.length < this.myMaxSize){ //keep things simple with less tracked objects
+                rect.width = 1.0; //start small
+                rect.height = 1.0;
+                obj = {key: this.myTracked.length, trackid: id, rect: rect};
+                //console.log(obj);
+                this.myTracked.push(obj); //add to tracked array
+              //}
+        }
+        else{
+          //simple moving average function, can be replaced by more complicated filters
+          //the goal is to create a smooth transition instead of the regular jerkiness of object tracking
+          var a = this.movingAverageValue;
+          var b = 1 - this.movingAverageValue;
+          rect.x = a*rect.x + b*(obj.rect.x);
+          rect.y = a*rect.y + b*(obj.rect.y);
+          rect.width = a*rect.width + b*(obj.rect.width);
+          rect.height = a*rect.height + b*(obj.rect.height);
+          obj = {key: this.myTracked.length, trackid: id, rect: rect};
+        }
+        //TODO:
+        //check if color matches
+        //check if x and y are close *enough*
+
+        return obj;
+      };
+    this.erase = function(){
+        ctx.fillStyle = "#F7B6FF";
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
+        trackerTask.stop(); //stop tracking
+        this.myTracked = []; //clean up
+        setTimeout(function(){trackerTask.run()}, 1000); //wait a second to start
+      }, //eraser controller
+    this.animate = function(rect, customColor){
+        //get color of rectangle to match color of tracked object:
+        if (rect.color === 'custom') {
+          rect.color = customColor;
+        }
+        ctx.strokeStyle = rect.color;
+        ctx.fillStyle = rect.color;
+
+        //make it pretty :)
+        ctx.shadowBlur = 50;
+        ctx.shadowColor = "#fff"; //make a pretty blur around the window border
+        ctx.lineWidth = 5;
+
+        //get radius
+        var r = (rect.width + rect.height) / 4;
+        //get center:
+        var x = (rect.x + r);
+        var y = (rect.y + r);
+
+        //draw a circle to make a window (360 degree arc)
+        ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, 2*Math.PI); //create an outline
+        ctx.stroke();
+        ctx.fill();
+        ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
+      },
+    this.draw = function(event, customColor){
+      //clear the canvas
+      ctx.fillStyle = "#F7B6FF"
+      ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
+
+      //tracking doesn't really track id,
+      //BUT it does seem to be consistent enough in the order of tracked objects for now
+      var i = 0;
+      var anim = this;
+      event.data.forEach(function(rect){
+        //console.log(rect);
+        var obj = anim.addTracked(i, rect); //add tracking object or gets smoothed object
+        if (obj !== undefined){
+          //console.log("Animating");
+          anim.animate(obj.rect); //handle canvas drawing
+        }
+        i++;
+      });
+  };
 }
 
 //create simple gui color picker, utility based from tracking.js
 //allows different colors to be tested!
-function initGUIControllers(tracker) {
+function initGUIControllers(tracker, animator) {
   // GUI Controllers
 
   var gui = new dat.GUI();
@@ -250,12 +258,13 @@ function initGUIControllers(tracker) {
           ];
 
 
-  detailsFolder.add(tracker, 'movingAverageValue', 0.0, 1.0);
-  detailsFolder.add(tracker, 'brushOne', globalCompositeOperationList);
-  detailsFolder.add(tracker, 'brushTwo', globalCompositeOperationList);
+  detailsFolder.add(animator, 'movingAverageValue', 0.0, 1.0);
+  detailsFolder.add(animator, 'brushOne', globalCompositeOperationList);
+  detailsFolder.add(animator, 'brushTwo', globalCompositeOperationList);
+  detailsFolder.add(animator, 'erase');
   colorsFolder.open();
   parametersFolder.open();
-
+  detailsFolder.open();
   //update the colors after the GUI is setup:
   updateColors();
 }

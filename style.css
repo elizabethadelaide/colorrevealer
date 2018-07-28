@@ -1,8 +1,15 @@
+body{
+  /*quick workaround to hide small overflow of scroll bars from innerwidth*/
+  overflow:hidden;
+}
 video, canvas {
 top:0;
 left:0;
  position: absolute;
  z-index:2;
+}
+#canvas{
+  opacity:0.8;
 }
 #video{
   opacity:1.0;
