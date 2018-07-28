@@ -101,27 +101,27 @@ function Animator(ctx, trackerTask){
         var y = (rect.y + r);
 
         //draw a circle to make a window (360 degree arc)
-        ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
         ctx.beginPath()
         ctx.arc(x, y, r, 0, 2*Math.PI); //create an outline
         ctx.stroke();
         ctx.fill();
-        ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
       },
 
     this.draw = function(event, customColor){
+      ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
 
       //A message or logo
-      ctx.font = "30px Arial";
-      ctx.fillText("Hello World",10,50);
+      ctx.fillStyle = "#FFFFFF"
 
-      //clear the canvas
+      ctx.font = "50px Arial";
+      ctx.fillText("Some Text",canvas.width/2,canvas.height/2);
+
       ctx.fillStyle = "#F7B6FF"
       ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
 
-
       //tracking doesn't really track id,
       //BUT it does seem to be consistent enough in the order of tracked objects for now
+      ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
       var i = 0;
       var anim = this;
       event.data.forEach(function(rect){
@@ -261,9 +261,12 @@ function initGUIControllers(tracker, animator) {
             'destination-over','destination-in','destination-out','destination-atop',
             'lighter', 'copy','xor', 'multiply', 'screen', 'overlay', 'darken',
             'lighten', 'color-dodge', 'color-burn', 'hard-light', 'soft-light',
-            'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'
+            'difference', 'hue', 'saturation', 'color', 'luminosity'
           ];
 
+  //Note: 'exclusion' is an operation, however:
+  //it can create flashing lights in this context
+  //it's exlcuded for now.
 
   detailsFolder.add(animator, 'movingAverageValue', 0.0, 1.0);
   detailsFolder.add(animator, 'brushOne', globalCompositeOperationList);
