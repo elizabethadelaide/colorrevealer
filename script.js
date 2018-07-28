@@ -40,9 +40,9 @@ function Animator(ctx, trackerTask){
     this.myTracked = []; //keep track of elements being tracked, right now just
     this.movingAverageValue = 0.8; //controls smoothness, 0.8 is good default value
     //these defaults leave a nice soft text reveal
-    this.brushText = "luminosity"; //controls text brush
-    this.brushOb = "source-atop"; //controls trackers brush
-    this.brushBg = "source-in"; //controls background brush
+    this.brushText = "source-in"; //controls text brush
+    this.brushOb = "luminosity"; //controls trackers brush
+    this.brushBg = "source-atop"; //controls background brush
     this.displayText = "Some Text";
     //functions:
     this.addTracked = function(id, rect){
@@ -119,8 +119,9 @@ function Animator(ctx, trackerTask){
       ctx.shadowColor = "#6115FF"
       ctx.fillStyle = "#FFFFFF"
 
-      ctx.font = "50px Arial";
-      ctx.fillText(this.displayText,canvas.width/2,canvas.height/2);
+      ctx.font = "100px Arial";
+      //can improve this later, but try to center text
+      ctx.fillText(this.displayText,canvas.width/2-this.displayText.length*25,canvas.height/2);
 
       ctx.globalCompositeOperation = this.brushBg; //destination-over leaves a beautiful trace over
       ctx.fillStyle = "#F7B6FF"
