@@ -40,8 +40,9 @@ function Animator(ctx, trackerTask){
     this.myTracked = []; //keep track of elements being tracked, right now just
     this.movingAverageValue = 0.8; //controls smoothness, 0.8 is good default value
     //these defaults leave a nice path of circles:
-    this.brushOne = "xor"; //controls placing brush
-    this.brushTwo = "destination-over"; //controls leaving brush
+    this.brushText = "lighten"; //controls text brush
+    this.brushOb = "xor"; //controls trackers brush
+    this.brushBg = "destination-over"; //controls background brush
     this.displayText = "Some Text";
     //functions:
     this.addTracked = function(id, rect){
@@ -74,7 +75,7 @@ function Animator(ctx, trackerTask){
 
         return obj;
       };
-    this.erase = function(){
+    this.refresh = function(){
         ctx.fillStyle = "#F7B6FF";
         ctx.globalCompositeOperation = "source-over";
         ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
@@ -109,20 +110,25 @@ function Animator(ctx, trackerTask){
       },
 
     this.draw = function(event, customColor){
-      ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
+
+      ctx.globalCompositeOperation = this.brushText; //destination-over leaves a beautiful trace over
 
       //A message or logo
+      //make it pretty :)
+      ctx.shadowBlur = 5;
+      ctx.shadowColor = "#6115FF"
       ctx.fillStyle = "#FFFFFF"
 
       ctx.font = "50px Arial";
       ctx.fillText(this.displayText,canvas.width/2,canvas.height/2);
 
+      ctx.globalCompositeOperation = this.brushBg; //destination-over leaves a beautiful trace over
       ctx.fillStyle = "#F7B6FF"
       ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
 
       //tracking doesn't really track id,
       //BUT it does seem to be consistent enough in the order of tracked objects for now
-      ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
+      ctx.globalCompositeOperation = this.brushOb; //xor will make a nice paint brush that reveals
       var i = 0;
       var anim = this;
       event.data.forEach(function(rect){
@@ -270,10 +276,11 @@ function initGUIControllers(tracker, animator) {
   //it's exlcuded for now.
 
   detailsFolder.add(animator, 'movingAverageValue', 0.0, 1.0);
-  detailsFolder.add(animator, 'brushOne', globalCompositeOperationList);
-  detailsFolder.add(animator, 'brushTwo', globalCompositeOperationList);
+  detailsFolder.add(animator, 'brushOb', globalCompositeOperationList);
+  detailsFolder.add(animator, 'brushBg', globalCompositeOperationList);
+  detailsFolder.add(animator, 'brushText', globalCompositeOperationList);
   detailsFolder.add(animator, 'displayText')
-  detailsFolder.add(animator, 'erase');
+  detailsFolder.add(animator, 'refresh');
   colorsFolder.open();
   parametersFolder.open();
   detailsFolder.open();
