@@ -42,6 +42,7 @@ function Animator(ctx, trackerTask){
     //these defaults leave a nice path of circles:
     this.brushOne = "xor"; //controls placing brush
     this.brushTwo = "destination-over"; //controls leaving brush
+    this.displayText = "Some Text";
     //functions:
     this.addTracked = function(id, rect){
         //full function goals
@@ -271,6 +272,7 @@ function initGUIControllers(tracker, animator) {
   detailsFolder.add(animator, 'movingAverageValue', 0.0, 1.0);
   detailsFolder.add(animator, 'brushOne', globalCompositeOperationList);
   detailsFolder.add(animator, 'brushTwo', globalCompositeOperationList);
+  detailsFolder.add(animator, 'displayText')
   detailsFolder.add(animator, 'erase');
   colorsFolder.open();
   parametersFolder.open();
