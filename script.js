@@ -31,39 +31,97 @@ window.onload = function(){
           ctx.fillStyle = "#F7B6FF"
           ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
 
+          this.mydraw(event);
 
-          //for each tracked object:
-	        event.data.forEach(function(rect) {
-
-            //get color of rectangle to match color of tracked object:
-	          if (rect.color === 'custom') {
-	            rect.color = tracker.customColor;
-	          }
-
-            //draw rectangle!
-	          ctx.strokeStyle = rect.color;
-            ctx.fillStyle = rect.color;
-
-            //make it pretty :)
-						ctx.shadowBlur = 50;
-						ctx.shadowColor = "#fff"; //make a pretty blur around the window border
-						ctx.lineWidth = 5;
-
-            //draw it
-            ctx.clearRect(rect.x, rect.y, rect.width, rect.height); //create a window in the canvas
-	          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height); //create a border around the window
-
-	        });
 	      });
+
+  /**********Manage tracked objects**********************/
+  tracker.myTracked = []; //keep track of elements being tracked
+  tracker.myMaxSize = 5;
+  tracker.movingAverageValue = .8; //0.8 is a smooth option
+  tracker.brushOne = "xor";
+  tracker.brushTwo = "destination-over";
+  tracker.addTracked = function(id, rect){
+    //full function goals
+    //check if id matches exists
+    //console.log("Adding tracker");
+    let obj = this.myTracked.find(o => o.trackid === id);
+    if (obj === undefined){
+          //if (this.myTracked.length < this.myMaxSize){ //keep things simple with less tracked objects
+            rect.width = 1.0; //start small
+            rect.height = 1.0;
+            obj = {key: this.myTracked.length, trackid: id, rect: rect};
+            //console.log(obj);
+            this.myTracked.push(obj); //add to tracked array
+          //}
+    }
+    else{
+      //simple moving average function, can be replaced by more complicated filters
+      //the goal is to create a smooth transition instead of the regular jerkiness of object tracking
+      var a = tracker.movingAverageValue;
+      var b = 1 - tracker.movingAverageValue;
+      rect.x = a*rect.x + b*(obj.rect.x);
+      rect.y = a*rect.y + b*(obj.rect.y);
+      rect.width = a*rect.width + b*(obj.rect.width);
+      rect.height = a*rect.height + b*(obj.rect.height);
+      obj = {key: this.myTracked.length, trackid: id, rect: rect};
+    }
+    //check if color matches
+    //check if x and y are close *enough*
+    return obj;
+  }
+
+  /************Canvas drawing*******************/
+  tracker.myAnimate = function(rect){
+    //get color of rectangle to match color of tracked object:
+    if (rect.color === 'custom') {
+      rect.color = tracker.customColor;
+    }
+    ctx.strokeStyle = rect.color;
+    ctx.fillStyle = rect.color;
+
+    //make it pretty :)
+    ctx.shadowBlur = 50;
+    ctx.shadowColor = "#fff"; //make a pretty blur around the window border
+    ctx.lineWidth = 5;
+
+    //get center:
+
+    //get radius
+    var r = (rect.width + rect.height) / 4;
+    var x = (rect.x + r);
+    var y = (rect.y + r);
+    //x = canvas.width-x; //it's left/right inverted
+
+    //draw a circle to make a window (360 degree arc)
+    ctx.globalCompositeOperation = this.brushOne; //xor will make a nice paint brush that reveals
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, 2*Math.PI); //create an outline
+    ctx.stroke();
+    ctx.fill();
+    ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
+  }
+  /***********drawing function******************/
+  tracker.mydraw = function(event){
+    //tracking doesn't really track id,
+    //BUT it does seem to be consistent enough in the order of tracked objects for now
+    var i = 0;
+    event.data.forEach(function(rect){
+      //console.log(rect);
+      var obj = tracker.addTracked(i, rect); //add tracking object or gets smoothed object
+      if (obj !== undefined){
+        //console.log("Animating");
+        tracker.myAnimate(obj.rect); //handle canvas drawing
+      }
+      i++;
+    });
+  }
 
   /***********initialize GUI********************/
   initGUIControllers(tracker);
-
-
-
 }
 
-//create simple gui color picker, utility from tracking.js
+//create simple gui color picker, utility based from tracking.js
 //allows different colors to be tested!
 function initGUIControllers(tracker) {
   // GUI Controllers
@@ -78,19 +136,28 @@ function initGUIControllers(tracker) {
   };
 
   //init color picker with all colors:
-  Object.keys(tracking.ColorTracker.knownColors_).forEach(function(color) {
+  /*Object.keys(tracking.ColorTracker.knownColors_).forEach(function(color) {
     trackedColors[color] = true;
-  });
+  });*/
 
   //for my magenta program, change to just to magenta!:
-
+  Object.keys(tracking.ColorTracker.knownColors_).forEach(function(color) {
+    if (color == 'magenta'){
+      trackedColors[color] = true;
+    }
+    else{
+      trackedColors[color] = false;
+    }
+  });
 
   //init custom color picker
   tracker.customColor = '#000000';
 
   //custom color picker:
   function createCustomColor(value) {
+    //regex and rgb value from color selector
     var components = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(value);
+    //get color components
     var customColorR = parseInt(components[1], 16);
     var customColorG = parseInt(components[2], 16);
     var customColorB = parseInt(components[3], 16);
@@ -153,6 +220,8 @@ function initGUIControllers(tracker) {
     }
   });
 
+
+
   colorsFolder.add(trackedColors, 'custom').onFinishChange(function(value) {
     if (value) {
       this.customColorElement = colorsFolder.addColor(tracker, 'customColor').onChange(createCustomColor);
@@ -167,6 +236,23 @@ function initGUIControllers(tracker) {
   parametersFolder.add(tracker, 'minDimension', 1, 100);
   parametersFolder.add(tracker, 'minGroupSize', 1, 100);
 
+  //details to change this specific app, display settings
+  var detailsFolder = gui.addFolder('Details');
+
+  //list of various global composite operations
+  //for different canvas effects
+  //from https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Compositing
+  var globalCompositeOperationList =  ['source-over','source-in','source-out','source-atop',
+            'destination-over','destination-in','destination-out','destination-atop',
+            'lighter', 'copy','xor', 'multiply', 'screen', 'overlay', 'darken',
+            'lighten', 'color-dodge', 'color-burn', 'hard-light', 'soft-light',
+            'difference', 'exclusion', 'hue', 'saturation', 'color', 'luminosity'
+          ];
+
+
+  detailsFolder.add(tracker, 'movingAverageValue', 0.0, 1.0);
+  detailsFolder.add(tracker, 'brushOne', globalCompositeOperationList);
+  detailsFolder.add(tracker, 'brushTwo', globalCompositeOperationList);
   colorsFolder.open();
   parametersFolder.open();
 
