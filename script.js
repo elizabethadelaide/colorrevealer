@@ -37,7 +37,7 @@ window.onload = function(){
 //main usage:
 //tracker.on('track', function(event){animator.mydraw(event)}
 function Animator(ctx, trackerTask){
-    this.myTracked = []; //keep track of elements being tracked, right now just 
+    this.myTracked = []; //keep track of elements being tracked, right now just
     this.movingAverageValue = 0.8; //controls smoothness, 0.8 is good default value
     //these defaults leave a nice path of circles:
     this.brushOne = "xor"; //controls placing brush
@@ -108,10 +108,17 @@ function Animator(ctx, trackerTask){
         ctx.fill();
         ctx.globalCompositeOperation = this.brushTwo; //destination-over leaves a beautiful trace over
       },
+
     this.draw = function(event, customColor){
+
+      //A message or logo
+      ctx.font = "30px Arial";
+      ctx.fillText("Hello World",10,50);
+
       //clear the canvas
       ctx.fillStyle = "#F7B6FF"
       ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
+
 
       //tracking doesn't really track id,
       //BUT it does seem to be consistent enough in the order of tracked objects for now
