@@ -115,7 +115,7 @@ function Animator(ctx, trackerTask){
       ctx.fillStyle = "#FFFFFF"
 
       ctx.font = "50px Arial";
-      ctx.fillText("Some Text",canvas.width/2,canvas.height/2);
+      ctx.fillText(this.displayText,canvas.width/2,canvas.height/2);
 
       ctx.fillStyle = "#F7B6FF"
       ctx.fillRect(0, 0, canvas.width, canvas.height); //cover the canvas in pink
